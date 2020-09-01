@@ -257,7 +257,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
       if len(val.item) < maxWidthOfItem:
         echo val.item
       else:
-        echo val.item[0..maxWidthOfItem]
+        echo val.item[0..maxWidthOfItem - 1]
 
   setCursorPos(0,0)
   echo prompt
@@ -275,7 +275,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
   if len(answer) < maxAnswerWidth:
     echo answer      
   else:
-    echo answer[0..maxAnswerWidth]
+    echo answer[0..maxAnswerWidth - 1]
 
 
 
