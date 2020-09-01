@@ -11,3 +11,4 @@ requires "nim >= 1.3.0"
 
 task examples, "Compiles the examples":
   exec "nim c -d:release examples/test.nim"
+  exec "nim c -d:release examples/fzf.nim"  
