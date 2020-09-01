@@ -2,13 +2,8 @@ import terminal
 import iup
 import algorithm 
 import strutils
-import math
 import os
 
-
-type 
-  CFile {.importc: "FILE", header: "<stdio.h>",
-          incompleteStruct.} = object
 
 proc dup(f: cint): cint {.
     importc: "dup", header: "<unistd.h>", tags: [].}
@@ -47,12 +42,10 @@ proc fzfuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool] =
       continue
 
     if strIndex == 0 and patternChar == strChar:
-      score = 3
+      score += 3
       patIndex += 1
       strIndex += 1
-      continue
-
-    if strChar == patternChar:
+    elif strChar == patternChar:
       score += 1 # float(float(1) * float(patIndex))
       strIndex += 1
       patIndex += 1
