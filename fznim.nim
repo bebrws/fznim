@@ -3,13 +3,23 @@ import iup
 import algorithm 
 import strutils
 import os
+import posix
 
 
-proc dup(f: cint): cint {.
-    importc: "dup", header: "<unistd.h>", tags: [].}
+type
+  ttysize* {.bycopy.} = object
+    ts_lines*: cushort
+    ts_cols*: cushort
+    ts_xxx*: cushort
+    ts_yyy*: cushort
 
-proc ttyname(f: cint): cstring {.
-    importc: "ttyname", header: "<unistd.h>", tags: [].}
+
+var ts:ttysize
+var r = ioctl(1, 1074295912, addr ts)
+
+var w = int(ts.ts_cols)
+var h = terminalHeight()
+var maxWidthOfItem = w - 4
 
 proc fdopen(f: cint, mode: cstring): File {.
     importc: "fdopen", header: "<stdio.h>", tags: [].}
@@ -121,9 +131,6 @@ proc fuzzySearchItems(answer: string, items: seq[string]): seq[tuple[index: int,
   return itemsToSearch
 
 proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: var int): int =
-  var w = terminalWidth()
-  var h = terminalHeight()
-
   result = sel
 
   # The length of the list is the height of the window minus 1 line for the prompt and 2 lines for spacing at the bottom
@@ -152,16 +159,16 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: s
 
   var endOfItemsToShowTo = numberOfItemsToShowAfterStart + startOfItemsToStartShowingFrom
 
-  var maxWidthOfItem = w - 4
   if oldStartOfItemsToStartShowingFrom != startOfItemsToStartShowingFrom or oldAnswer != answer:
     eraseScreen()
     oldStartOfItemsToStartShowingFrom = startOfItemsToStartShowingFrom
     for index, val in itemsToSearch[startOfItemsToStartShowingFrom..endOfItemsToShowTo]:
       setCursorPos(2, (index + 1))
-      if len(val.item) < maxWidthOfItem:
-        echo val.item # & " " & $val.score
-      else:
-        echo val.item[0..maxWidthOfItem - 1]
+      echo val.item
+      # if len(val.item) < maxWidthOfItem - 1:
+      #   echo val.item # & " " & $val.score
+      # else:
+      #   echo val.item[0 ..^ (maxWidthOfItem - 1)]
 
   setCursorPos(0,0)
   echo prompt
@@ -207,9 +214,6 @@ proc selectFromList*(prompt: string, items: seq): int =
 
   var sel = 0
   var answer = ""
-
-  var w = terminalWidth()
-  var h = terminalHeight()
 
   if w < len(prompt) or h < 4:
     return -1
