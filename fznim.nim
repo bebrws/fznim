@@ -312,6 +312,9 @@ proc selectFromList*(prompt: string, items: seq): int =
 
   var w = terminalWidth()
   var h = terminalHeight()
+
+  if w < len(prompt) or h < 4:
+    return -1
   
   hideCursor()
 
