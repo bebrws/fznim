@@ -24,7 +24,7 @@ proc printf(formatstr: cstring) {.importc: "printf", varargs,
                                   header: "<stdio.h>".}
                                   
 
-proc fzfuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool, highlighted: string] =
+proc fzfuzzyMatch*(pattern: string, str: string, longestItemLength: int) : tuple[score: int, matched: bool, highlighted: string] =
   var
     strIndex = 0
     patIndex = 0
@@ -54,7 +54,7 @@ proc fzfuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool, hig
       strIndex += 1
     elif strChar == patternChar:
       highlightedString &= "\e[1;31m" & str[strIndex] & "\e[00m"
-      score += int(str.len/strIndex)  # float(float(1) * float(patIndex))
+      score += int(longestItemLength/strIndex)  # float(float(1) * float(patIndex))
       if lastCharMatchedScore != 0:
         lastCharMatchedScore += 2
         score += lastCharMatchedScore
@@ -104,9 +104,13 @@ proc fuzzySearchItems(answer: string, items: seq[string]): seq[tuple[index: int,
   itemsToSearch = @[]
 
   if len(answer) > 0:
+    var maxLength: int = 0
+    for index, item in items:
+      if len(item) > maxLength:
+        maxLength = len(item)
     for index, item in items:
       var strItem = $item
-      let (score, matched, highlighted) = fzfuzzyMatch(string(answer), strItem)
+      let (score, matched, highlighted) = fzfuzzyMatch(answer, strItem, maxLength)
       if matched == true:
         matches.add((index: index, item: highlighted, score: score))
     matches.sort(proc(x: auto, y: auto): int = y.score - x.score)
@@ -155,7 +159,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: s
     for index, val in itemsToSearch[startOfItemsToStartShowingFrom..endOfItemsToShowTo]:
       setCursorPos(2, (index + 1))
       if len(val.item) < maxWidthOfItem:
-        echo val.item
+        echo val.item # & " " & $val.score
       else:
         echo val.item[0..maxWidthOfItem - 1]
 
