@@ -183,11 +183,6 @@ var oldStartOfShow = -1
 var oldAnswer = ""
 var oldSelLocation = 1
 
-proc hideCursorInCorner(): void =
-  var w = terminalWidth()
-  var h = terminalHeight()
-  setCursorPos(w,h)
-
 proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel: var int): int =
   var w = terminalWidth()
   var h = terminalHeight()
