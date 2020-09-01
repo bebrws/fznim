@@ -169,16 +169,6 @@ proc fuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool] =
 
 
 
-
-
-
-
-
-
-
-
-
-
 # Start of fznim
 
 type
@@ -296,8 +286,6 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
 proc selectFromList*(prompt: string, items: seq): int =
   var sel = 0
   var answer = ""
-  var ws = $terminalWidth()
-  var hs = $terminalHeight()
 
   var w = terminalWidth()
   var h = terminalHeight()
@@ -311,7 +299,12 @@ proc selectFromList*(prompt: string, items: seq): int =
   var takingInput = true
   var nextIsControlKey = false
   while takingInput:
-    var ch = cint(getch())
+
+    var ch: cint = 0
+    try:
+      ch = cint(getch())
+    except EOFError:
+      ch = 0
 
     var newsel = sel
 
