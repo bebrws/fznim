@@ -25,69 +25,13 @@ proc freopen(filename, mode: cstring, stream: File): File {.
 proc c_fileno(f: File): cint {.
     importc: "fileno", header: "<fcntl.h>".}
 
-# Start of fuzzysearch from nim codebase:
-# =====================================================
-# Nim -- a Compiler for Nim. https://nim-lang.org/
-
-# Copyright (C) 2006-2020 Andreas Rumpf. All rights reserved.
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-
-# [ MIT license: http://www.opensource.org/licenses/mit-license.php ]
-
-const
-  MaxUnmatchedLeadingChar = 3
-  ## Maximum number of times the penalty for unmatched leading chars is applied.
-
-  HeadingScaleFactor = 0.5
-  ## The score from before the colon Char is multiplied by this.
-  ## This is to weight function signatures and descriptions over module titles.
 
 
-type
-  ScoreCard = enum
-    StartMatch           = -100 ## Start matching.
-    LeadingCharDiff      = -3   ## An unmatched, leading character was found.
-    CharDiff             = -1   ## An unmatched character was found.
-    CharMatch            = 0    ## A matched character was found.
-    ConsecutiveMatch     = 5    ## A consecutive match was found.
-    LeadingCharMatch     = 10   ## The character matches the beginning of the
-                                ## string or the first character of a word
-                                ## or camel case boundary.
-    WordBoundryMatch     = 20   ## The last ConsecutiveCharMatch that
-                                ## immediately precedes the end of the string,
-                                ## end of the pattern, or a LeadingCharMatch.
-
-
-proc fuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool] =
+proc fzfuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool] =
   var
-    scoreState = StartMatch
-    headerMatched = false
-    unmatchedLeadingCharCount = 0
-    consecutiveMatchCount = 0
     strIndex = 0
     patIndex = 0
-    score = 0
-
-  template transition(nextState) =
-    scoreState = nextState
-    score += ord(scoreState)
+    score:float = 0
 
   while (strIndex < str.len) and (patIndex < pattern.len):
     var
@@ -102,91 +46,27 @@ proc fuzzyMatch*(pattern, str: cstring) : tuple[score: int, matched: bool] =
       strIndex += 1
       continue
 
-    # Since this algorithm will be used to search against Nim documentation,
-    # the below logic prioritizes headers.
-    if not headerMatched and strChar == ':':
-      headerMatched = true
-      scoreState = StartMatch
-      score = int(floor(HeadingScaleFactor * float(score)))
-      patIndex = 0
+    if strIndex == 0 and patternChar == strChar:
+      score = 3
+      patIndex += 1
       strIndex += 1
       continue
 
     if strChar == patternChar:
-      case scoreState
-      of StartMatch, WordBoundryMatch:
-        scoreState = LeadingCharMatch
-
-      of CharMatch:
-        transition(ConsecutiveMatch)
-
-      of LeadingCharMatch, ConsecutiveMatch:
-        consecutiveMatchCount += 1
-        scoreState = ConsecutiveMatch
-        score += ord(ConsecutiveMatch) * consecutiveMatchCount
-
-        if scoreState == LeadingCharMatch:
-          score += ord(LeadingCharMatch)
-
-        var onBoundary = (patIndex == high(pattern))
-        if not onBoundary and strIndex < high(str):
-          let
-            nextPatternChar = toLowerAscii(pattern[patIndex + 1])
-            nextStrChar     = toLowerAscii(str[strIndex + 1])
-
-          onBoundary = (
-            nextStrChar notin {'a'..'z'} and
-            nextStrChar != nextPatternChar
-          )
-
-        if onBoundary:
-          transition(WordBoundryMatch)
-
-      of CharDiff, LeadingCharDiff:
-        var isLeadingChar = (
-          str[strIndex - 1] notin Letters or
-          str[strIndex - 1] in {'a'..'z'} and
-          str[strIndex] in {'A'..'Z'}
-        )
-
-        if isLeadingChar:
-          scoreState = LeadingCharMatch
-          #a non alpha or a camel case transition counts as a leading char.
-          # Transition the state, but don't give the bonus yet; wait until we verify a consecutive match.
-        else:
-          transition(CharMatch)
+      score += 1 # float(float(1) * float(patIndex))
+      strIndex += 1
       patIndex += 1
-
     else:
-      case scoreState
-      of StartMatch:
-        transition(LeadingCharDiff)
-
-      of ConsecutiveMatch:
-        transition(CharDiff)
-        consecutiveMatchCount = 0
-
-      of LeadingCharDiff:
-        if unmatchedLeadingCharCount < MaxUnmatchedLeadingChar:
-          transition(LeadingCharDiff)
-        unmatchedLeadingCharCount += 1
-
-      else:
-        transition(CharDiff)
-
-    strIndex += 1
+      strIndex += 1
 
   if patIndex == pattern.len and (strIndex == str.len or str[strIndex] notin Letters):
     score += 10
 
   result = (
-    score:   max(0, score),
-    matched: (score > 0),
+    score:   max(0, int(score)),
+    matched: (int(score) > 0),
   )
   
-
-
-
 
 
 # Start of fznim
@@ -216,7 +96,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
   if len(answer) > 0:
     for index, item in items:
       var strItem = $item
-      let (score, matched) = fuzzymatch(answer, strItem)
+      let (score, matched) = fzfuzzyMatch(string(answer), strItem)
       if matched == true:
         matches.add((index, strItem, score))
     matches.sort(proc(x: auto, y: auto): int = y.score - x.score)
