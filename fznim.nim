@@ -3,7 +3,27 @@ import iup
 import algorithm 
 import strutils
 import math
+import os
 
+
+type 
+  CFile {.importc: "FILE", header: "<stdio.h>",
+          incompleteStruct.} = object
+
+proc dup(f: cint): cint {.
+    importc: "dup", header: "<unistd.h>", tags: [].}
+
+proc ttyname(f: cint): cstring {.
+    importc: "ttyname", header: "<unistd.h>", tags: [].}
+
+proc fdopen(f: cint, mode: cstring): File {.
+    importc: "fdopen", header: "<stdio.h>", tags: [].}
+
+proc freopen(filename, mode: cstring, stream: File): File {.
+    importc: "freopen", nodecl.}    
+
+proc c_fileno(f: File): cint {.
+    importc: "fileno", header: "<fcntl.h>".}
 
 # Start of fuzzysearch from nim codebase:
 # =====================================================
@@ -187,7 +207,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
   var w = terminalWidth()
   var h = terminalHeight()
 
-  var shownListBottom = h - 2
+  var shownListBottom = h - 1
   var shownListLength = shownListBottom - 3
 
   itemsToSearch = @[]
@@ -279,6 +299,12 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
   echo "*"   
 
 proc selectFromList*(prompt: string, items: seq): int =
+
+  if getFileInfo(stdin).id.file != 37:
+    var stdindup = dup(c_fileno(stdin))
+    var input = fdopen(stdindup, cstring("r"))
+    discard freopen(ttyname(c_fileno(stdout)), cstring("r"), stdin)
+
   var sel = 0
   var answer = ""
 
