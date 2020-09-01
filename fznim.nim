@@ -230,6 +230,8 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
       sel = len(itemsToSearch) - 1
     else:
       sel = 0
+
+  result = sel
     
   var numToShowAfterSStart = len(itemsToSearch) - 1
   var startOfShow = 0

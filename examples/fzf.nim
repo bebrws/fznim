@@ -27,10 +27,9 @@ while true:
   else:
     lines.add(l)
 
-discard c_fseek(stdin, 0, 0)
-
 var resultIndex = selectFromList("Select: ", lines)
 
 eraseScreen()
+echo "result index is: " & $resultIndex
 
 system.quit(resultIndex)
