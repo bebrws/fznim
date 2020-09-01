@@ -191,7 +191,7 @@ var itemsToSearch: seq[ItemsMatch]
 var matches: seq[ItemsMatch]
 var oldStartOfShow = -1
 var oldAnswer = ""
-var oldSelLocation = -1
+var oldSelLocation = 1
 
 proc hideCursorInCorner(): void =
   var w = terminalWidth()
@@ -207,6 +207,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
 
   itemsToSearch = @[]
   matches = @[]
+  
   if len(answer) > 0:
     for index, item in items:
       var strItem = $item
@@ -220,7 +221,10 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
       itemsToSearch.add((index, $item, index))
 
   if sel > len(itemsToSearch) - 1:
-    sel = len(itemsToSearch) - 1
+    if len(itemsToSearch) > 0:
+      sel = len(itemsToSearch) - 1
+    else:
+      sel = 0
     
   var numToShowAfterSStart = len(itemsToSearch) - 1
   var startOfShow = 0
@@ -237,19 +241,23 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
         result = -1
     else:
       numToShowAfterSStart = shownListLength
-      if sel < len(itemsToSearch):
+      if sel != -1 and sel < len(itemsToSearch):
         result = itemsToSearch[sel].index
       else:
         result = -1
 
   var endOfShow = numToShowAfterSStart + startOfShow
 
+  var maxWidthOfItem = w - 4
   if oldStartOfShow != startOfShow or oldAnswer != answer:
     eraseScreen()
     oldStartOfShow = startOfShow
     for index, val in itemsToSearch[startOfShow..endOfShow]:
       setCursorPos(2, (index + 1))
-      echo val.item
+      if len(val.item) < maxWidthOfItem:
+        echo val.item
+      else:
+        echo val.item[0..maxWidthOfItem]
 
   setCursorPos(0,0)
   echo prompt
@@ -263,7 +271,11 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
     
 
   setCursorPos(len(prompt) + 1,0)
-  echo answer      
+  var maxAnswerWidth = w - len(prompt) - 2
+  if len(answer) < maxAnswerWidth:
+    echo answer      
+  else:
+    echo answer[0..maxAnswerWidth]
 
 
 
@@ -279,9 +291,7 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, items: seq, sel:
     oldSelLocation = selLocation    
   
   setCursorPos(0, selLocation)
-  echo "*"  
-
-  hideCursor()  
+  echo "*"   
 
 proc selectFromList*(prompt: string, items: seq): int =
   var sel = 0
@@ -292,8 +302,7 @@ proc selectFromList*(prompt: string, items: seq): int =
   var w = terminalWidth()
   var h = terminalHeight()
   
-  echo "Terminal width: " & ws
-  echo "Terminal height: " & hs
+  hideCursor()
 
   var _ = drawPromptItemsAndSelector(prompt, answer, items, sel)
 
@@ -344,13 +353,14 @@ proc selectFromList*(prompt: string, items: seq): int =
       # echo "*"  
       sel = newsel
       var selection = drawPromptItemsAndSelector(prompt, answer, items, sel)
-      result = selection
+      if selection != -1:
+        result = selection
 
     # Debug info for getch
     # setCursorPos(10, 14)
     # echo ch
     
-    hideCursor()
+  showCursor()
 
 
 # Example usage:
