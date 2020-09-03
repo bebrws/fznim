@@ -56,7 +56,7 @@ proc fzfuzzyMatch*(pattern: string, str: string, longestItemLength: int) : tuple
 
     if strIndex == 0 and patternChar == strChar:
       highlightedString &= "\e[1;39m" & str[strIndex] & "\e[00m"
-      score += 3
+      score += longestItemLength
       lastCharMatchedScore += 2
       patIndex += 1
       strIndex += 1
