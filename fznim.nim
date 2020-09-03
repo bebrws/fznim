@@ -142,7 +142,7 @@ proc fuzzySearchItems(sel: int, answer: string, items: seq[string]): seq[tuple[i
     itemsToSearch[index].item = str
   return itemsToSearch
 
-proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: var int): int =
+proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: int): int =
   result = sel
 
   # The length of the list is the height of the window minus 1 line for the prompt and 2 lines for spacing at the bottom
