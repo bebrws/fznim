@@ -35,7 +35,6 @@ proc fzfuzzyMatch*(pattern: string, str: string, longestItemLength: int) : tuple
   var
     strIndex = 0
     patIndex = 0
-    lastCharMatchedScore = 0
     score = 0
     numInRow = 0
     highlightedString = ""
@@ -57,33 +56,25 @@ proc fzfuzzyMatch*(pattern: string, str: string, longestItemLength: int) : tuple
     if strIndex == 0 and patternChar == strChar:
       highlightedString &= "\e[1;39m" & str[strIndex] & "\e[00m"
       score += longestItemLength
-      lastCharMatchedScore += 2
       patIndex += 1
       strIndex += 1
       numInRow += 1
     elif strChar == patternChar:
       highlightedString &= "\e[1;44m" & str[strIndex] & "\e[00m"
       score += int(longestItemLength/strIndex) * (if numInRow == 0: 1 else: (numInRow * 3))
-      if lastCharMatchedScore != 0:
-        lastCharMatchedScore += 2
-        score += lastCharMatchedScore
       numInRow += 1
       strIndex += 1
       patIndex += 1
     else:
       if not (str[strIndex] in {'_', ' ', '.'}):
-        lastCharMatchedScore = 0
+        numInRow = 0
       highlightedString &= str[strIndex]
       strIndex += 1
-      numInRow = 0
+      
   
   while strIndex < str.len and strIndex < (w - 4):
     highlightedString &= str[strIndex]
     strIndex += 1
-      
-
-  # if patIndex == pattern.len and patIndex == strIndex:
-  #   score += 10
 
   result = (
     score:   max(0, int(score)),
