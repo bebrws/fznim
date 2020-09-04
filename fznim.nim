@@ -1,3 +1,6 @@
+#TODOS:
+# debounce input so it doesnt try to re render after quick succession of input
+
 import terminal
 import iup
 import algorithm 

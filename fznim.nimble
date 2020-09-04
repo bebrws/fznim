@@ -7,7 +7,7 @@ license       = "MIT"
 
 skipDirs = @["examples"]
 
-requires "nim >= 1.3.0"
+requires "nim >= 1.0.0"
 
 task examples, "Compiles the examples":
   exec "nim c -d:release examples/test.nim"
