@@ -6,4 +6,4 @@ FZNIM is a fuzzy string search command line interface prompt which acts very sim
 
 It is still a work in progress but I thought I would share in case anyone was trying to script any command line interfaces and might be looking for something similar
 
-![An animated gif of the fzf like usage of fznim](/static/fznim.gif)
+![An animated gif of the fzf like usage of fznim](https://bradbarrows.com/static/fznim.gif)
