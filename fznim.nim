@@ -12,6 +12,52 @@ import strutils
 import os
 import posix
 import system
+import termios
+
+
+
+{.passL: gorge("pkg-config --libs ncursesw").}
+
+type
+  WindowObj {.header: "<ncurses.h>", importc:"WINDOW".} = object
+  Window = ptr WindowObj
+
+proc keypad(win: Window, bf: bool): int {.header: "<ncurses.h>", discardable, importc.}
+proc endwin(): cint {.header: "<ncurses.h>", discardable, importc: "endwin".}
+proc nocbreak(): cint {.header: "<ncurses.h>", discardable, importc: "nocbreak".}
+proc no_echo(): cint {.header: "<ncurses.h>", discardable, importc: "noecho".}
+proc initscr(): Window {.header: "<ncurses.h>", discardable, importc.}
+proc cbreak(): int {.header: "<ncurses.h>", discardable, importc.}
+proc ngetch(): cint {.header: "<ncurses.h>", discardable,  importc: "getch".}  
+var stdscr {.header: "<ncurses.h>", importc.}: Window
+proc nodelay(window: Window, state: bool): int {.header: "<ncurses.h>", discardable, importc.}
+
+
+
+
+
+const
+    NCCS    = 20
+    TCSANOW = 0
+
+    ECHO:   uint = 0x00000008 # 1 shl 3
+    ICANON: uint = 0x00000100 # 1 shl 8
+
+# type termios = object
+#     c_iflag*: uint
+#     c_oflag*: uint
+#     c_cflag*: uint
+#     c_lflag*: uint
+#     c_line*:  char
+#     c_cc*:    array[NCCS, char]
+
+# proc tcgetattr(f: int, t: ptr termios): void {. header: "<termios.h>", importc: "tcgetattr" .}
+# proc tcsetattr(f: int, s: int, t: ptr termios): void {. header: "<termios.h>", importc: "tcsetattr" .}
+# proc getchar(): cint {. importc: "getchar" .}
+
+
+
+
 
 var w = terminalWidth()
 var h = terminalHeight()
@@ -199,6 +245,36 @@ proc selectFromList*(prompt: string, items: seq): int =
     var input = fdopen(stdindup, cstring("r"))
     discard freopen(ttyname(c_fileno(stdout)), cstring("r"), stdin)
 
+
+  var
+    oldtio: Termios
+    newtio: Termios
+    c: char = cast[char](0x00)
+
+  # get the terminal settings for stdin */
+  discard tcGetAttr(STDIN_FILENO, oldtio.addr)
+
+  # we want to keep the old setting to restore them a the end
+  newtio = oldtio
+
+  # disable canonical mode (buffered i/o) and local echo
+  echo newtio
+  newtio.c_lflag = newtio.c_lflag and
+                   ((not ICANON.cuint) and (not ECHO.cuint))
+
+  echo newtio
+
+  # set the new settings immediately
+  discard tcSetAttr(STDIN_FILENO, TCSANOW, newtio.addr)
+
+
+  initscr()
+  cbreak()
+  noecho()
+  keypad(stdscr, true)
+  nodelay(stdscr, true);
+
+
   var sel = 0
   var answer = ""
 
@@ -210,6 +286,7 @@ proc selectFromList*(prompt: string, items: seq): int =
   itemsSearched = fuzzySearchItems(sel, "", shortenedItems)
   drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, sel)
 
+  var count = 0
   result = 0
   var oldSelLocation = 0
   var controlKey = 0
@@ -217,32 +294,23 @@ proc selectFromList*(prompt: string, items: seq): int =
   var nextIsControlKey = false
   var shouldRedraw: bool = true
   while takingInput:
+    count += 1
 
     var ch: cint = 0
     try:
-      ch = cint(getch())
+      ch = cint(ngetch()) # cint(getch())
     except EOFError:
       ch = 0
 
     var newsel = sel
 
-    if ch == 13:
+    if ch == 10:
       # an enter key was hit
       takingInput = false
-    elif ch == 3:
-      # ctrl c was hit
-      takingInput = false
-    elif ch == 27 and controlKey == 0:
-      # Contorl C actually sends a few keys in a row, 27 then 91 then the c character
-      controlKey = 1
-    elif ch == 91 and controlKey == 1:
-      controlKey = 2     
-    elif ch == 65 and controlKey == 2:
-      controlKey = 0
+    elif ch == 259:
       if sel > 0:
         newsel -= 1
-    elif ch == 66 and controlKey == 2:
-      controlKey = 0
+    elif ch == 258:
       if sel < len(shortenedItems) - 1:
         newsel += 1
     elif int(ch) == 127:
@@ -254,7 +322,7 @@ proc selectFromList*(prompt: string, items: seq): int =
         answer = answer[0..(len(answer) - 2)]
       # A character was deleted so re create the list of items being shown in the search
       shouldRedraw = true
-    elif isprint(ch) == true and controlKey == 0:
+    elif isprint(cint(ch)) == true and controlKey == 0:
       # A printable non backspace or control c character was hit so update the "answer" term
       answer &= char(ch)
       # And then update the list of items being searched
@@ -280,12 +348,29 @@ proc selectFromList*(prompt: string, items: seq): int =
       itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
       drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, oldSelLocation)
       shouldRedraw = false
+      # if not thread.running:
+        # proc threadFunc() {.thread, nimcall.} =
+          # itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
+          # drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, oldSelLocation)
+          # shouldRedraw = false
+
 
     # Debug with something like this:
-    # setCursorPos(10, 14)
+    if int(ch) != -1:
+      count += 1
+      setCursorPos(10, 14)
+      echo "key: " & $ch
+    # echo "count: " & $count
     # echo "Sel: " & $itemsSearched[sel].index
     
   showCursor()
+  discard tcsetattr(0, TCSANOW, oldtio.addr)      
+
+  keypad(stdscr, false);
+  nodelay(stdscr, false);
+  nocbreak();
+  echo();
+  endwin();
 
 
 # Example usage:
