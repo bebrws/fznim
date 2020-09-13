@@ -43,25 +43,31 @@ if paramCount() == 3:
 
 # todo check if file is bninary
 var files: seq[string] = @[]
-for file in walkDirRec searchFilePath:
-  if filenameEnd.len != 0:
-    if file.match re(filenameEnd):
-      files.add(file)
-  else:
-    files.add(file)
 
-for file in files:
-  let fileContent = readFile(file)
-  var isLikelyBinary = false
-  for c in fileContent[0..min(fileContent.len-1, terminalWidth())]:
-    if isNotAscii(c):
-      isLikelyBinary = true   
-  if not isLikelyBinary:
-    var lineNo:int = 0
-    for line in fileContent.splitLines:
-      fileLines.add((lineNo, file, line))
-      justLines.add(line)
-      lineNo += 1
+if existsDir(searchFilePath):
+  for file in walkDirRec searchFilePath:
+    if filenameEnd.len != 0:
+      if file.match re(filenameEnd):
+        files.add(file)
+    else:
+      files.add(file)
+else:
+  if existsFile(searchFilePath):
+    files.add(searchFilePath)    
+    
+  for file in files:
+    let fileContent = readFile(file)
+    var isLikelyBinary = false
+    for c in fileContent[0..min(fileContent.len-1, terminalWidth())]:
+      if isNotAscii(c):
+        isLikelyBinary = true   
+    if not isLikelyBinary:
+      var lineNo:int = 0
+      for line in fileContent.splitLines:
+        fileLines.add((lineNo, file, line))
+        justLines.add(line)
+        lineNo += 1
+  
 
 let resultIndex = selectFromList("Select line: ", justLines)
 
