@@ -219,11 +219,12 @@ proc selectFromList*(prompt: string, items: seq): int =
   var controlKey = 0
   var takingInput = true
   var nextIsControlKey = false
+  var shouldRedraw: bool = true
   while takingInput:
 
     var ch: cint = 0
     try:
-      ch = c[int(getch())
+      ch = cint(getch())
     except EOFError:
       ch = 0
 
@@ -256,16 +257,12 @@ proc selectFromList*(prompt: string, items: seq): int =
       elif len(answer) > 1:
         answer = answer[0..(len(answer) - 2)]
       # A character was deleted so re create the list of items being shown in the search
-      itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
-      # Redraw the screen
-      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      shouldRedraw = true
     elif isprint(ch) == true and controlKey == 0:
       # A printable non backspace or control c character was hit so update the "answer" term
       answer &= char(ch)
       # And then update the list of items being searched
-      itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
-      # Re draw the screen
-      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      shouldRedraw = true
       # Reset the selector position back to the top when changing the "answer" search term
       # because it can be confusing to show a lower sub section of the results and not see
       # the result you are looking for up at the first result
@@ -275,13 +272,16 @@ proc selectFromList*(prompt: string, items: seq): int =
     if sel != newsel:
       if newsel < len(itemsSearched):
         sel = newsel
-      itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
-      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      shouldRedraw = true
 
     if itemsSearched.len > 0:
       result = itemsSearched[sel].index
     else:
       result = 0
+
+    if shouldRedraw == true:
+      itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
+      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
 
     # Debug with something like this:
     # setCursorPos(10, 14)

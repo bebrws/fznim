@@ -24,5 +24,11 @@ or an example of a tool that could be made with fznim:
 ```
 nimble install -y
 nim c examples/fzgrep.nim
-./examples/fzgrep ./ "code -g {-}:{_}"  
+./examples/fzgrep  "code -g {-}:{_}"  
+```
+
+Or to search all the MacOS SDK Headers:
+
+```
+./examples/fzgrep /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include "code -g {-}:{_}"  
 ```
