@@ -13,7 +13,7 @@ import os
 import posix
 import system
 import termios
-
+import threadpool
 
 
 {.passL: gorge("pkg-config --libs ncursesw").}
@@ -34,28 +34,12 @@ proc nodelay(window: Window, state: bool): int {.header: "<ncurses.h>", discarda
 
 
 
-
-
 const
     NCCS    = 20
     TCSANOW = 0
 
     ECHO:   uint = 0x00000008 # 1 shl 3
     ICANON: uint = 0x00000100 # 1 shl 8
-
-# type termios = object
-#     c_iflag*: uint
-#     c_oflag*: uint
-#     c_cflag*: uint
-#     c_lflag*: uint
-#     c_line*:  char
-#     c_cc*:    array[NCCS, char]
-
-# proc tcgetattr(f: int, t: ptr termios): void {. header: "<termios.h>", importc: "tcgetattr" .}
-# proc tcsetattr(f: int, s: int, t: ptr termios): void {. header: "<termios.h>", importc: "tcsetattr" .}
-# proc getchar(): cint {. importc: "getchar" .}
-
-
 
 
 
@@ -131,6 +115,8 @@ type
     index: int
     item: string
     score: int
+  FutureSeq = FlowVar[seq[tuple[index: int, item: string, score: int]]]
+
 
 proc colorEndOfString(str: string): string =
   var loc = str.rfind("\e[00m")
@@ -293,6 +279,8 @@ proc selectFromList*(prompt: string, items: seq): int =
   var takingInput = true
   var nextIsControlKey = false
   var shouldRedraw: bool = true
+  var future: FutureSeq = nil
+
   while takingInput:
     count += 1
 
@@ -344,22 +332,23 @@ proc selectFromList*(prompt: string, items: seq): int =
     else:
       result = 0
 
-    if shouldRedraw == true:
-      itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
+    if future != nil and future.isReady():
+      itemsSearched = ^future
       drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, oldSelLocation)
+      future = nil
+
+    if shouldRedraw == true:
+      # itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
+      future = spawn fuzzySearchItems(sel, answer, shortenedItems)
+      # drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, oldSelLocation)
       shouldRedraw = false
-      # if not thread.running:
-        # proc threadFunc() {.thread, nimcall.} =
-          # itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
-          # drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, oldSelLocation)
-          # shouldRedraw = false
 
 
     # Debug with something like this:
-    if int(ch) != -1:
-      count += 1
-      setCursorPos(10, 14)
-      echo "key: " & $ch
+    # if int(ch) != -1:
+    #   count += 1
+    #   setCursorPos(10, 14)
+    #   echo "key: " & $ch
     # echo "count: " & $count
     # echo "Sel: " & $itemsSearched[sel].index
     
