@@ -12,16 +12,6 @@ import strutils
 import os
 import posix
 
-# type
-#   ttysize* {.bycopy.} = object
-#     ts_lines*: cushort
-#     ts_cols*: cushort
-#     ts_xxx*: cushort
-#     ts_yyy*: cushort
-# var ts:ttysize
-# var r = ioctl(1, 1074295912, addr ts)
-# var w = int(ts.ts_cols)
-
 var w = terminalWidth()
 var h = terminalHeight()
 
@@ -32,11 +22,7 @@ proc freopen(filename, mode: cstring, stream: File): File {.
     importc: "freopen", nodecl.}    
 
 proc c_fileno(f: File): cint {.
-    importc: "fileno", header: "<fcntl.h>".}
-
-# proc printf(formatstr: cstring) {.importc: "printf", varargs,
-#                                   header: "<stdio.h>".}
-                                  
+    importc: "fileno", header: "<fcntl.h>".}                       
 
 proc fzfuzzyMatch*(pattern: string, str: string, longestItemLength: int) : tuple[score: int, matched: bool, highlighted: string] =
   var

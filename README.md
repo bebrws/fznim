@@ -18,3 +18,11 @@ nimble install -y
 nim c examples/fzf.nim  
 find ./ | examples/fzf
 ```
+
+or an example of a tool that could be made with fznim:
+
+```
+nimble install -y
+nim c examples/fzgrep.nim
+./examples/fzgrep ./ "code -g {-}:{_}"  
+```
