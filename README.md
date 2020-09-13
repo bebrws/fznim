@@ -1,10 +1,10 @@
-# FZNIM
+# FZNIM - FZF in nim
 
 Have you used fzf before but wanted to script something a little too complicated to easily do with zsh or bash?
 
-FZNIM is a fuzzy string search command line interface prompt which acts very similar to fzf.
+FZNIM is a library providing a fuzzy string search command line interface prompt which acts just like fzf.
 
-It is still a work in progress but I thought I would share in case anyone was trying to script any command line interfaces and might be looking for something similar
+There is an example fzf clone written in nim and a tool showing some example usage called fzgrep which will search all lines in all files in the directory provided returning the file with the selected line.
 
 ![An animated gif of the fzf like usage of fznim](fznim.gif)
 
