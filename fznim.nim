@@ -207,7 +207,7 @@ proc selectFromList*(prompt: string, items: seq): int =
       strIndex += 1
     shortenedItems.add(newItem)
 
-  var itemsSearched  = fuzzySearchItems(0, "", shortenedItems)
+  var itemsSearched = fuzzySearchItems(0, "", shortenedItems)
 
   if getFileInfo(stdin).id.file != 37:
     var stdindup = dup(c_fileno(stdin))
@@ -222,7 +222,7 @@ proc selectFromList*(prompt: string, items: seq): int =
   
   hideCursor()
 
-  itemsSearched  = fuzzySearchItems(sel, "", shortenedItems)
+  itemsSearched = fuzzySearchItems(sel, "", shortenedItems)
   drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
 
   result = 0
@@ -266,14 +266,14 @@ proc selectFromList*(prompt: string, items: seq): int =
       elif len(answer) > 1:
         answer = answer[0..(len(answer) - 2)]
       # A character was deleted so re create the list of items being shown in the search
-      itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
+      itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
       # Redraw the screen
       drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
     elif isprint(ch) == true and controlKey == 0:
       # A printable non backspace or control c character was hit so update the "answer" term
       answer &= char(ch)
       # And then update the list of items being searched
-      itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
+      itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
       # Re draw the screen
       drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
       # Reset the selector position back to the top when changing the "answer" search term
