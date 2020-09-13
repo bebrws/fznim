@@ -282,6 +282,7 @@ proc selectFromList*(prompt: string, items: seq): int =
     if shouldRedraw == true:
       itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
       drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      shouldRedraw = false
 
     # Debug with something like this:
     # setCursorPos(10, 14)
