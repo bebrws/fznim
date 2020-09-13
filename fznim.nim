@@ -11,6 +11,7 @@ import algorithm
 import strutils
 import os
 import posix
+import system
 
 var w = terminalWidth()
 var h = terminalHeight()
@@ -85,10 +86,6 @@ type
     item: string
     score: int
 
-var oldSelLocation = 1
-var matches: seq[ItemsMatch]
-var itemsToSearch: seq[ItemsMatch]
-
 proc colorEndOfString(str: string): string =
   var loc = str.rfind("\e[00m")
   var lastEndOfColor = if loc < 0: 0 else: loc
@@ -101,8 +98,8 @@ proc fuzzySearchItems(sel: int, answer: string, items: seq[string]): seq[tuple[i
   # Create itemsToSearch which is a list of tuples containing the original index of a search item,
   # the search item itself, and the match score of how well the search item matched against the 
   # prompt "answer" that is being typed by the user
-  matches = @[]
-  itemsToSearch = @[]
+  var matches: seq[ItemsMatch] = @[]
+  var itemsToSearch: seq[ItemsMatch] = @[]
 
   if len(answer) > 0:
     var maxLength: int = 0
@@ -126,7 +123,7 @@ proc fuzzySearchItems(sel: int, answer: string, items: seq[string]): seq[tuple[i
     itemsToSearch[index].item = str
   return itemsToSearch
 
-proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: int): void =
+proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: int, oldSelLocation: int): void =
   # The length of the list is the height of the window minus 1 line for the prompt and 2 lines for spacing at the bottom
   var shownListBottom = h - 1
   var shownListLength = shownListBottom - 2
@@ -138,10 +135,8 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: s
   else:
     selLocation += 1
 
-  if oldSelLocation != selLocation:
-    setCursorPos(0, oldSelLocation)
-    echo " "
-    oldSelLocation = selLocation    
+  setCursorPos(0, oldSelLocation)
+  echo " "
 
   var numberOfItemsToShowAfterStart = len(itemsToSearch) - 1
   var startOfItemsToStartShowingFrom = 0
@@ -213,9 +208,10 @@ proc selectFromList*(prompt: string, items: seq): int =
   hideCursor()
 
   itemsSearched = fuzzySearchItems(sel, "", shortenedItems)
-  drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+  drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, sel)
 
   result = 0
+  var oldSelLocation = 0
   var controlKey = 0
   var takingInput = true
   var nextIsControlKey = false
@@ -271,6 +267,7 @@ proc selectFromList*(prompt: string, items: seq): int =
     # If selector has moved
     if sel != newsel:
       if newsel < len(itemsSearched):
+        oldSelLocation = sel
         sel = newsel
       shouldRedraw = true
 
@@ -281,7 +278,7 @@ proc selectFromList*(prompt: string, items: seq): int =
 
     if shouldRedraw == true:
       itemsSearched = fuzzySearchItems(sel, answer, shortenedItems)
-      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel, oldSelLocation)
       shouldRedraw = false
 
     # Debug with something like this:
