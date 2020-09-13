@@ -136,9 +136,7 @@ proc fuzzySearchItems(sel: int, answer: string, items: seq[string]): seq[tuple[i
     itemsToSearch[index].item = str
   return itemsToSearch
 
-proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: int): int =
-  result = sel
-
+proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: seq[tuple[index: int, item: string, score: int]], sel: int): void =
   # The length of the list is the height of the window minus 1 line for the prompt and 2 lines for spacing at the bottom
   var shownListBottom = h - 1
   var shownListLength = shownListBottom - 2
@@ -164,29 +162,18 @@ proc drawPromptItemsAndSelector(prompt: string, answer: string, itemsToSearch: s
         numberOfItemsToShowAfterStart = shownListLength
       else:
         numberOfItemsToShowAfterStart = len(itemsToSearch) - 1 - startOfItemsToStartShowingFrom
-      if numberOfItemsToShowAfterStart + startOfItemsToStartShowingFrom < len(itemsToSearch):
-        result = itemsToSearch[numberOfItemsToShowAfterStart + startOfItemsToStartShowingFrom].index
-      else:
-        result = -1
     else:
       numberOfItemsToShowAfterStart = shownListLength
-      if sel != -1 and sel < len(itemsToSearch):
-        result = itemsToSearch[sel].index
-      else:
-        result = -1
 
   var endOfItemsToShowTo = numberOfItemsToShowAfterStart + startOfItemsToStartShowingFrom
 
-  #if oldStartOfItemsToStartShowingFrom != startOfItemsToStartShowingFrom or oldAnswer != answer:
   eraseScreen()
-  # oldStartOfItemsToStartShowingFrom = startOfItemsToStartShowingFrom
   for index, val in itemsToSearch[startOfItemsToStartShowingFrom..endOfItemsToShowTo]:
     setCursorPos(2, (index + 1))
     if index == selLocation - 1:
       echo "\e[1;32m" & val.item & "\e[00m"
     else:
       echo val.item
-    # echo val.item[0 .. min(val.item.len - 1, 160)]
 
   setCursorPos(0,0)
   echo prompt
@@ -236,7 +223,7 @@ proc selectFromList*(prompt: string, items: seq): int =
   hideCursor()
 
   itemsSearched  = fuzzySearchItems(sel, "", shortenedItems)
-  var _ = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+  drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
 
   result = 0
   var controlKey = 0
@@ -281,14 +268,14 @@ proc selectFromList*(prompt: string, items: seq): int =
       # A character was deleted so re create the list of items being shown in the search
       itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
       # Redraw the screen
-      var _ = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
     elif isprint(ch) == true and controlKey == 0:
       # A printable non backspace or control c character was hit so update the "answer" term
       answer &= char(ch)
       # And then update the list of items being searched
       itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
       # Re draw the screen
-      var _ = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
       # Reset the selector position back to the top when changing the "answer" search term
       # because it can be confusing to show a lower sub section of the results and not see
       # the result you are looking for up at the first result
@@ -299,7 +286,7 @@ proc selectFromList*(prompt: string, items: seq): int =
       if newsel < len(itemsSearched):
         sel = newsel
       itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
-      var selection = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
+      drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
 
     if itemsSearched.len > 0:
       result = itemsSearched[sel].index
