@@ -301,7 +301,10 @@ proc selectFromList*(prompt: string, items: seq): int =
       itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
       var selection = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
 
-    result = itemsSearched[sel].index
+    if itemsSearched.len > 0:
+      result = itemsSearched[sel].index
+    else:
+      result = 0
 
     # Debug with something like this:
     # setCursorPos(10, 14)

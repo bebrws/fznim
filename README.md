@@ -9,3 +9,12 @@ It is still a work in progress but I thought I would share in case anyone was tr
 ![An animated gif of the fzf like usage of fznim](fznim.gif)
 
 [I have more information at the blog](https://bradbarrows.com/post/fznim)
+
+
+To use this try:
+
+```
+nimble install -y
+nim c examples/fzf.nim  
+find ./ | examples/fzf
+```
