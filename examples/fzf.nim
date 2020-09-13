@@ -1,3 +1,9 @@
+# Author: Brad Barrows
+# Copyright (c) 2020
+# MIT License
+#
+# A nim FZF clone using the fznim library
+#
 import system
 import terminal
 import fznim

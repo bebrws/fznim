@@ -1,3 +1,10 @@
+# Author: Brad Barrows
+# Copyright (c) 2020
+# MIT License
+#
+# A command line tool written in nim that is similar to fzf but searches lines in 
+# files returning the file selected
+#
 import strutils
 import system
 import terminal

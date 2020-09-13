@@ -1,5 +1,9 @@
-#TODOS:
-# debounce input so it doesnt try to re render after quick succession of input
+# Author: Brad Barrows
+# Copyright (c) 2020
+# MIT License
+#
+# A library written to provide a fzf like command line interface
+#
 
 import terminal
 import iup
@@ -233,7 +237,7 @@ proc selectFromList*(prompt: string, items: seq): int =
 
     var ch: cint = 0
     try:
-      ch = cint(getch())
+      ch = c[int(getch())
     except EOFError:
       ch = 0
 
