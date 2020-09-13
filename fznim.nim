@@ -259,6 +259,7 @@ proc selectFromList*(prompt: string, items: seq): int =
       # ctrl c was hit
       takingInput = false
     elif ch == 27 and controlKey == 0:
+      # Contorl C actually sends a few keys in a row, 27 then 91 then the c character
       controlKey = 1
     elif ch == 91 and controlKey == 1:
       controlKey = 2     
@@ -271,40 +272,40 @@ proc selectFromList*(prompt: string, items: seq): int =
       if sel < len(shortenedItems) - 1:
         newsel += 1
     elif int(ch) == 127:
-      # Backspace was hit
+      # Backspace was hit remove a character
       var newLength = len(answer)
       if len(answer) == 1:
         answer = ""
       elif len(answer) > 1:
-        newLength = len(answer) - 2
-        answer = answer[0..newLength]
+        answer = answer[0..(len(answer) - 2)]
+      # A character was deleted so re create the list of items being shown in the search
       itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
+      # Redraw the screen
       var _ = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
     elif isprint(ch) == true and controlKey == 0:
+      # A printable non backspace or control c character was hit so update the "answer" term
       answer &= char(ch)
+      # And then update the list of items being searched
       itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
+      # Re draw the screen
       var _ = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
-      # Must check sel again here because the list of items has now changed due to the answer fzy search
-    if sel > len(itemsSearched) - 1:
-      if len(itemsSearched) > 0:
-        sel = len(itemsSearched) - 1
-      else:
-        sel = 0
+      # Reset the selector position back to the top when changing the "answer" search term
+      # because it can be confusing to show a lower sub section of the results and not see
+      # the result you are looking for up at the first result
+      newsel = 0
 
-    if sel != newsel and sel < len(itemsSearched):
-      # setCursorPos(0, (sel + 1))
-      # echo " "
-      # setCursorPos(0, (newsel + 1))
-      # echo "*"  
-      sel = newsel
-      itemsSearched  = fuzzySearchItems(newsel, answer, shortenedItems)
+    # If selector has moved
+    if sel != newsel:
+      if newsel < len(itemsSearched):
+        sel = newsel
+      itemsSearched = fuzzySearchItems(newsel, answer, shortenedItems)
       var selection = drawPromptItemsAndSelector(prompt, answer, itemsSearched, sel)
-      if selection != -1:
-        result = selection
 
-    # Debug info for getch
+    result = itemsSearched[sel].index
+
+    # Debug with something like this:
     # setCursorPos(10, 14)
-    # echo ch
+    # echo "Sel: " & $itemsSearched[sel].index
     
   showCursor()
 
